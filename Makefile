@@ -18,7 +18,7 @@ SFLAGS = -std=gnu99 -pedantic
 LDFLAGS += -L/opt/vc/lib
 INCLUDES += -I. -isystem /opt/vc/include -isystem /opt/vc/include/interface/vcos/pthreads -isystem /opt/vc/include/interface/vmcs_host/linux
 SRCS = $(wildcard $(SRCDIR)/*.c)
-LIBS += -lbcm_host -lEGL -lGLESv2
+LIBS += -lbcm_host -lEGL -lGLESv2 -lpthread
 OBJS=$(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
 PREFIX ?= /usr
