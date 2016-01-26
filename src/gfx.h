@@ -14,7 +14,7 @@ typedef struct {
 
 DISPMANX_DISPLAY_HANDLE_T setup_graphics(void);
 ClientWindow create_window(DISPMANX_DISPLAY_HANDLE_T display);
-void destroy_window(ClientWindow c);
+void destroy_window(ClientWindow *c);
 void window_update_graphics(ClientWindow *c, uint32_t *data);
 
 

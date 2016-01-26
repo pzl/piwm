@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h> // memset
-#include <unistd.h> //close, gethostname
-#include <errno.h>
+#include <unistd.h> //close
 
 #include "gfx.h"
 #include "net.h"
@@ -11,8 +10,6 @@
 int main (int argc, char **argv) {
 	(void) argc;
 	(void) argv;
-
-
 
 	// network
 	int sock;
@@ -79,7 +76,7 @@ int main (int argc, char **argv) {
 		}
 
 		//graphics cleanup
-		destroy_window(gfx);
+		destroy_window(&gfx);
 		//network cleanup
 		close(client);
 

@@ -82,7 +82,7 @@ ClientWindow create_window(DISPMANX_DISPLAY_HANDLE_T display) {
 	return client;
 }
 
-void destroy_window(ClientWindow c) {
+void destroy_window(ClientWindow *c) {
 	//graphics window cleanup
 
 	DISPMANX_UPDATE_HANDLE_T update;
@@ -90,21 +90,21 @@ void destroy_window(ClientWindow c) {
 	if ((update = vc_dispmanx_update_start(UPDATE_PRIORITY)) == DISPMANX_NO_HANDLE){
 		fprintf(stderr, "error getting update handle for window cleanup\n");
 	}
-	if (vc_dispmanx_element_remove(update,c.window) != 0){
+	if (vc_dispmanx_element_remove(update,c->window) != 0){
 		fprintf(stderr, "error removing window\n");
 	}
 	if (vc_dispmanx_update_submit_sync(update) != 0){
 		fprintf(stderr, "error submitting update to remove window\n");
 	}
 
-	if (vc_dispmanx_resource_delete(c.rsrc[0]) != 0){
+	if (vc_dispmanx_resource_delete(c->rsrc[0]) != 0){
 		fprintf(stderr, "error deleting first resource\n");
 	}
-	if (vc_dispmanx_resource_delete(c.rsrc[1]) != 0){
+	if (vc_dispmanx_resource_delete(c->rsrc[1]) != 0){
 		fprintf(stderr, "error deleting second resource\n");
 	}
 
-	c.next=0;
+	c->next=0;
 }
 
 void window_update_graphics(ClientWindow *c, uint32_t *data) {
