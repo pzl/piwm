@@ -2,11 +2,20 @@
 #include <string.h> // memset
 #include <unistd.h> //close
 
+#include <pthread.h>
+
 #include "gfx.h"
 #include "net.h"
 
-void handle_connection(int client_socket, struct sockaddr_storage remote_addr, Display screen);
 
+typedef struct {
+	int sock;
+	struct sockaddr_storage addr;
+	Display screen;
+} Client; /* for passing the info to a thread */
+
+void on_connect(int client_socket, struct sockaddr_storage remote_addr, Display screen);
+void *handle_client_thread(void *);
 
 int main (int argc, char **argv) {
 	(void) argc;
@@ -31,7 +40,7 @@ int main (int argc, char **argv) {
 
 
 	while ( (client = accept(sock, (struct sockaddr *)&remote_addr, &addr_size)) > 0){
-		handle_connection(client, remote_addr, screen);
+		on_connect(client, remote_addr, screen);
 		//@todo: method to break here, or catch signals
 		//and end up in code below, closing socket and cleaning up GPU
 		//would need to close threads and clients
@@ -45,20 +54,23 @@ int main (int argc, char **argv) {
 }
 
 
-void handle_connection(int client, struct sockaddr_storage addr, Display screen) {
+void *handle_client_thread(void *ptr) {
+	Client *client = (Client *)ptr;
+
+
 	char buf[2048];
 	ssize_t n_recvd;
 	uint32_t img_data[32];
 	ClientWindow gfx;
 
 	printf("got a connection\n");
-	get_client_name(&addr);
+	get_client_name(&(client->addr));
 
 	printf("creating element\n");
-	gfx = create_window(screen);
+	gfx = create_window(client->screen);
 
 	memset(img_data, 0, 32*sizeof(uint32_t));
-	while ( (n_recvd = recv(client, buf, 2048, 0)) > 0) {
+	while ( (n_recvd = recv(client->sock, buf, 2048, 0)) > 0) {
 		/*
 		printf("< ");
 		for (int i=0; i<n_recvd; i++){
@@ -88,5 +100,23 @@ void handle_connection(int client, struct sockaddr_storage addr, Display screen)
 
 	
 	destroy_window(&gfx); //graphics cleanup
-	close(client);        //network cleanup
+	close(client->sock);  //network cleanup
+	free(client);
+	//pthread_exit or return
+	return NULL;
+}
+
+void on_connect(int client, struct sockaddr_storage addr, Display screen) {
+	Client *c;
+	pthread_t thread;
+	pthread_attr_t attrs;
+
+	c = malloc(sizeof(Client));
+	c->sock = client;
+	c->addr = addr;
+	c->screen = screen;
+
+	pthread_attr_init(&attrs);
+	pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+	pthread_create(&thread, &attrs, handle_client_thread, (void *)c);
 }
