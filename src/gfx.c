@@ -77,7 +77,7 @@ ClientWindow create_window(Display d) {
 		exit(1);
 	}
 
-
+	printf("opened window\n");
 
 	return client;
 }

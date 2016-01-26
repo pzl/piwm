@@ -2,6 +2,7 @@
 import socket
 import random
 import time
+import code
 
 colors = [
 	b'\x00\x00\xff',
@@ -13,16 +14,18 @@ colors = [
 	b'\xff\x00\x00'
 ]
 
+def r(times=1):
+	return b"".join([random.choice(colors) for i in range(times)])
 
+
+def rainbow(length=120):
+	for i in range(length):
+		s.send(b"\x02" + r(4))
+		time.sleep(1/60)
 
 
 s = socket.create_connection(("192.168.1.47",18455))
-
-for i in range(120):
-	s.send( random.choice(colors) + random.choice(colors) + random.choice(colors) + random.choice(colors) )
-	time.sleep(1/60)
+s.send(b"\x00")
 
 
-
-time.sleep(1)
-s.close()
+code.interact(local=locals())
