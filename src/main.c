@@ -34,15 +34,8 @@ int main (int argc, char **argv) {
 	socklen_t addr_size = sizeof(remote_addr);
 
 
-	// GRAPHICS DRAWING/UPDATE VARS and SETUP
-	VC_RECT_T rect;
+	// graphics update vars
 	ClientWindow gfx;
-	DISPMANX_UPDATE_HANDLE_T update;
-
-	memset(img_data, 0, 32*sizeof(uint32_t));
-	vc_dispmanx_rect_set(&rect, 0, 0, 2, 2);
-
-
 
 	while ( (client = accept(sock, (struct sockaddr *)&remote_addr, &addr_size)) > 0){
 
@@ -82,31 +75,7 @@ int main (int argc, char **argv) {
 			img_data[16]= buf[8] | buf[7] << 8 | buf[6] << 16;
 			img_data[17]= buf[11] | buf[10] << 8 | buf[9] << 16;
 			
-
-			//upload image data to GPU resource
-			if (vc_dispmanx_resource_write_data(gfx.rsrc[gfx.next], VC_IMAGE_RGBA32,
-			                                16*sizeof(uint32_t),
-			                                img_data, &rect) != 0){
-				fprintf(stderr, "error writing resource data\n");
-				continue;
-			}
-
-
-			if ((update = vc_dispmanx_update_start(UPDATE_PRIORITY)) == DISPMANX_NO_HANDLE){
-				fprintf(stderr, "error getting update handle\n");
-				continue;
-			}
-			if (vc_dispmanx_element_change_source(update, gfx.window, gfx.rsrc[gfx.next]) != 0){
-				fprintf(stderr, "error setting element source\n");
-			}
-			if (vc_dispmanx_update_submit_sync(update) != 0){
-				fprintf(stderr, "error submitting source change\n");
-			}
-			
-
-
-			//swap resource buffers, write to the now-unused one
-			gfx.next ^= 1;
+			window_update_graphics(&gfx, img_data);
 		}
 
 		//graphics cleanup

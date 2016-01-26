@@ -106,3 +106,35 @@ void destroy_window(ClientWindow c) {
 
 	c.next=0;
 }
+
+void window_update_graphics(ClientWindow *c, uint32_t *data) {
+	DISPMANX_UPDATE_HANDLE_T update;
+	VC_RECT_T rect;
+	vc_dispmanx_rect_set(&rect, 0, 0, 2, 2);
+
+
+	//upload image data to GPU resource
+	if (vc_dispmanx_resource_write_data(c->rsrc[c->next], VC_IMAGE_RGBA32,
+	                                16*sizeof(uint32_t),
+	                                data, &rect) != 0){
+		fprintf(stderr, "error writing resource data\n");
+		return;
+	}
+
+
+	if ((update = vc_dispmanx_update_start(UPDATE_PRIORITY)) == DISPMANX_NO_HANDLE){
+		fprintf(stderr, "error getting update handle\n");
+		return;
+	}
+	if (vc_dispmanx_element_change_source(update, c->window, c->rsrc[c->next]) != 0){
+		fprintf(stderr, "error setting element source\n");
+	}
+	if (vc_dispmanx_update_submit_sync(update) != 0){
+		fprintf(stderr, "error submitting source change\n");
+	}
+
+
+
+	//swap resource buffers, write to the now-unused one
+	c->next ^= 1;
+}
