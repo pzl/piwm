@@ -9,79 +9,12 @@
 
 #include <arpa/inet.h>
 
-// --------
-
-#include <bcm_host.h>
-#define UPDATE_PRIORITY 10
-
+#include "gfx.h"
 
 #define PORT "18455"
 #define MAX_BACKED_UP_CLIENTS 10
 
 
-DISPMANX_DISPLAY_HANDLE_T setup_graphics(void){
-
-	DISPMANX_DISPLAY_HANDLE_T display;
-	DISPMANX_MODEINFO_T dispinfo;
-
-	bcm_host_init();
-
-	if ((display = vc_dispmanx_display_open(0 /*LCD*/)) == DISPMANX_NO_HANDLE){
-		fprintf(stderr, "error opening display\n");
-		exit(1);
-	}
-
-	if (vc_dispmanx_display_get_info(display, &dispinfo) != 0){
-		fprintf(stderr, "error getting display information\n");
-		exit(1);
-	}
-
-	printf("Display is %dx%d\n",dispinfo.width, dispinfo.height);
-
-
-	return display;
-}
-
-DISPMANX_ELEMENT_HANDLE_T create_window(DISPMANX_DISPLAY_HANDLE_T display) {
-	DISPMANX_ELEMENT_HANDLE_T element;
-	DISPMANX_UPDATE_HANDLE_T update;
-	VC_DISPMANX_ALPHA_T alpha = {
-		DISPMANX_FLAGS_ALPHA_FIXED_ALL_PIXELS,
-		120, // 0->255
-		0
-	};
-	VC_RECT_T src,
-			  dst;
-
-	if (vc_dispmanx_rect_set(&src, 0, 0, 2<<16, 2<<16) != 0){
-		fprintf(stderr, "error setting rect\n");
-		return DISPMANX_NO_HANDLE;
-	}
-	if (vc_dispmanx_rect_set(&dst, 5, 5, 200, 200) != 0){
-		fprintf(stderr, "error setting rect\n");
-		return DISPMANX_NO_HANDLE;
-	}
-
-	if ((update = vc_dispmanx_update_start(UPDATE_PRIORITY)) == DISPMANX_NO_HANDLE){
-		fprintf(stderr, "error getting update handle\n");
-		return DISPMANX_NO_HANDLE;
-	}
-
-	if ((element = vc_dispmanx_element_add(update, display, 1/*LAYER*/,
-									&dst, 0/*rsrc*/, &src,
-									DISPMANX_PROTECTION_NONE,
-									&alpha, NULL, DISPMANX_NO_ROTATE)) == DISPMANX_NO_HANDLE){
-		fprintf(stderr, "Error adding window\n");
-		return DISPMANX_NO_HANDLE;
-	}
-
-	if (vc_dispmanx_update_submit_sync(update) != 0){
-		fprintf(stderr, "error finishing element add update\n");
-		return DISPMANX_NO_HANDLE;
-	}
-
-	return element;
-}
 
 
 int main (int argc, char **argv) {
@@ -102,7 +35,6 @@ int main (int argc, char **argv) {
 	//GRAPHICS VARS
 	uint32_t img_data[32];
 	DISPMANX_DISPLAY_HANDLE_T display;
-	DISPMANX_ELEMENT_HANDLE_T window;
 
 	display = setup_graphics();
 
@@ -156,22 +88,11 @@ int main (int argc, char **argv) {
 
 	// GRAPHICS DRAWING/UPDATE VARS and SETUP
 	VC_RECT_T rect;
+	ClientWindow gfx;
 	DISPMANX_UPDATE_HANDLE_T update;
-	DISPMANX_RESOURCE_HANDLE_T rsrc0, rsrc1,
-							   *cur,  *next, *tmp;
 
 	memset(img_data, 0, 32*sizeof(uint32_t));
 	vc_dispmanx_rect_set(&rect, 0, 0, 2, 2);
-
-	uint32_t throwaway_ptr;
-	if ((rsrc0 = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, 2,2, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
-		fprintf(stderr, "Error creating resource\n");
-		exit(1);
-	}
-	if ((rsrc1 = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, 2,2, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
-		fprintf(stderr, "Error creating resource\n");
-		exit(1);
-	}
 
 
 
@@ -199,9 +120,8 @@ int main (int argc, char **argv) {
 		printf("from %s:%d\n", clientname,port);
 
 		printf("creating element\n");
-		window = create_window(display);
-		next = &rsrc0;
-		cur = &rsrc1;
+		gfx = create_window(display);
+
 
 
 		char buf[2048];
@@ -234,7 +154,7 @@ int main (int argc, char **argv) {
 			
 
 			//upload image data to GPU resource
-			if (vc_dispmanx_resource_write_data(*next, VC_IMAGE_RGBA32,
+			if (vc_dispmanx_resource_write_data(gfx.rsrc[gfx.next], VC_IMAGE_RGBA32,
 			                                16*sizeof(uint32_t),
 			                                img_data, &rect) != 0){
 				fprintf(stderr, "error writing resource data\n");
@@ -246,7 +166,7 @@ int main (int argc, char **argv) {
 				fprintf(stderr, "error getting update handle\n");
 				continue;
 			}
-			if (vc_dispmanx_element_change_source(update, window, *next) != 0){
+			if (vc_dispmanx_element_change_source(update, gfx.window, gfx.rsrc[gfx.next]) != 0){
 				fprintf(stderr, "error setting element source\n");
 			}
 			if (vc_dispmanx_update_submit_sync(update) != 0){
@@ -256,35 +176,19 @@ int main (int argc, char **argv) {
 
 
 			//swap resource buffers, write to the now-unused one
-			tmp = next;
-			next = cur;
-			cur = tmp;
+			gfx.next ^= 1;
 		}
 
-		//graphics window cleanup
-		if ((update = vc_dispmanx_update_start(UPDATE_PRIORITY)) == DISPMANX_NO_HANDLE){
-			fprintf(stderr, "error getting update handle for window cleanup\n");
-		}
-		if (vc_dispmanx_element_remove(update,window) != 0){
-			fprintf(stderr, "error removing window\n");
-		}
-		if (vc_dispmanx_update_submit_sync(update) != 0){
-			fprintf(stderr, "error submitting update to remove window\n");
-		}
-
+		//graphics cleanup
+		destroy_window(gfx);
 		//network cleanup
 		close(client);
 
 		//@todo: method to break here, or catch signals
 		//and end up in code below, closing socket and cleaning up GPU
 	}
+
 	close(sock);
-
-
-	//graphics global cleanup. errors here are mostly meaningless
-	vc_dispmanx_resource_delete(rsrc0);
-	vc_dispmanx_resource_delete(rsrc1);
-
 	vc_dispmanx_display_close(display);
 
 
