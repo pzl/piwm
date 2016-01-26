@@ -17,12 +17,13 @@ int main (int argc, char **argv) {
 
 	//GRAPHICS VARS
 	uint32_t img_data[32];
-	DISPMANX_DISPLAY_HANDLE_T display;
+	Display screen;
 
 
 	memset(img_data, 0, 32*sizeof(uint32_t));
-	display = setup_graphics();
+	screen = setup_graphics();
 	sock = setup_socket();
+
 
 	// ----------------------
 
@@ -40,7 +41,7 @@ int main (int argc, char **argv) {
 		get_client_name(&remote_addr);
 
 		printf("creating element\n");
-		gfx = create_window(display);
+		gfx = create_window(screen);
 
 
 
@@ -85,7 +86,7 @@ int main (int argc, char **argv) {
 	}
 
 	close(sock);
-	vc_dispmanx_display_close(display);
+	vc_dispmanx_display_close(screen.display);
 
 
 	return 0;

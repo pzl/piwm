@@ -3,30 +3,30 @@
 #include "gfx.h"
 
 
-DISPMANX_DISPLAY_HANDLE_T setup_graphics(void){
-
-	DISPMANX_DISPLAY_HANDLE_T display;
+Display setup_graphics(void){
+	Display d;
 	DISPMANX_MODEINFO_T dispinfo;
 
 	bcm_host_init();
 
-	if ((display = vc_dispmanx_display_open(0 /*LCD*/)) == DISPMANX_NO_HANDLE){
+	if ((d.display = vc_dispmanx_display_open(0 /*LCD*/)) == DISPMANX_NO_HANDLE){
 		fprintf(stderr, "error opening display\n");
 		exit(1);
 	}
 
-	if (vc_dispmanx_display_get_info(display, &dispinfo) != 0){
+	if (vc_dispmanx_display_get_info(d.display, &dispinfo) != 0){
 		fprintf(stderr, "error getting display information\n");
 		exit(1);
 	}
 
 	printf("Display is %dx%d\n",dispinfo.width, dispinfo.height);
+	d.width = dispinfo.width;
+	d.height = dispinfo.height;
 
-
-	return display;
+	return d;
 }
 
-ClientWindow create_window(DISPMANX_DISPLAY_HANDLE_T display) {
+ClientWindow create_window(Display d) {
 	ClientWindow client;
 	uint32_t throwaway_ptr;
 	DISPMANX_UPDATE_HANDLE_T update;
@@ -64,7 +64,7 @@ ClientWindow create_window(DISPMANX_DISPLAY_HANDLE_T display) {
 		exit(1);
 	}
 
-	if ((client.window = vc_dispmanx_element_add(update, display, 1/*LAYER*/,
+	if ((client.window = vc_dispmanx_element_add(update, d.display, 1/*LAYER*/,
 									&dst, 0/*rsrc*/, &src,
 									DISPMANX_PROTECTION_NONE,
 									&alpha, NULL, DISPMANX_NO_ROTATE)) == DISPMANX_NO_HANDLE){

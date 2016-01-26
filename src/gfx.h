@@ -12,8 +12,14 @@ typedef struct {
 	int next;
 } ClientWindow;
 
-DISPMANX_DISPLAY_HANDLE_T setup_graphics(void);
-ClientWindow create_window(DISPMANX_DISPLAY_HANDLE_T display);
+typedef struct {
+	DISPMANX_DISPLAY_HANDLE_T display;
+	int width;
+	int height;
+} Display;
+
+Display setup_graphics(void);
+ClientWindow create_window(Display d);
 void destroy_window(ClientWindow *c);
 void window_update_graphics(ClientWindow *c, uint32_t *data);
 
