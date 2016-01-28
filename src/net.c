@@ -83,7 +83,7 @@ uint32_t get_packet(int sock, Buffer *buffer, char **bufp) {
 			printf("cached packet has size %zu bytes\n", pack_size);
 
 
-			if (buffer->buf_end - buffer->next_boundary < pack_size){
+			if ((uint32_t)(buffer->buf_end - buffer->next_boundary) < pack_size){
 				printf("but we only have %d read. reading more\n", (buffer->buf_end - buffer->next_boundary));
 				// didn't receive enough to match packet size, ask for more
 				*bufp = recv_finish_packet(sock,buffer);
@@ -159,7 +159,7 @@ static char *recv_new_packet(int sock, Buffer *buffer){
 		printf("packet size header read as %zu\n", pack_size);
 
 		//have we read enough to encompass the packet?
-		if (buffer->buf_end - buffer->buf < pack_size){
+		if ( (uint32_t)(buffer->buf_end - buffer->buf) < pack_size){
 			printf("total read (%d) less than packet size (%zu). repeating read\n",(buffer->buf_end - buffer->buf),pack_size);
 			continue; //not enough yet
 		} else {
@@ -177,10 +177,10 @@ static char *recv_new_packet(int sock, Buffer *buffer){
 	}
 
 
-	if (buffer->buf_end - buffer->buf < pack_size) { 
+	if ((uint32_t)(buffer->buf_end - buffer->buf) < pack_size) { 
 		printf("packet under sized. freaking out\n");
 		return NULL; //we never got the whole packet, and didn't catch it above. SHUT IT DOWN
-	} else if (buffer->buf_end - buffer->buf > pack_size) {
+	} else if ((uint32_t)(buffer->buf_end - buffer->buf) > pack_size) {
 		printf("read more than one packet. Read: %d, packet is only %zu\n", (buffer->buf_end - buffer->buf),pack_size);
 		buffer->next_boundary = buffer->buf + pack_size;  //we started reading something else!
 	} else {
@@ -219,7 +219,7 @@ static char *recv_finish_packet(int sock, Buffer *buffer) {
 		pack_size = packet_size(buffer->buf);
 
 		//have we read enough to encompass the packet?
-		if (buffer->buf_end - pack_start < pack_size){
+		if ((uint32_t)(buffer->buf_end - pack_start) < pack_size){
 			continue; //not enough yet
 		} else {
 			break; // we got it! 
@@ -235,9 +235,9 @@ static char *recv_finish_packet(int sock, Buffer *buffer) {
 		return NULL;
 	}
 
-	if (buffer->buf_end - pack_start < pack_size) {
+	if ((uint32_t)(buffer->buf_end - pack_start) < pack_size) {
 		return NULL; //didn't get the whole packet, and didn't catch it in the loop. panic
-	} else if (buffer->buf_end - pack_start > pack_size) {
+	} else if ((uint32_t)(buffer->buf_end - pack_start) > pack_size) {
 		buffer->next_boundary = pack_start + pack_size; //we started reading into the next packet
 	} else {
 		//we matched packet length exactly. next packet can start at buffer start
