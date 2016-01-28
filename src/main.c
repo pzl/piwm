@@ -16,6 +16,7 @@ typedef struct {
 
 void on_connect(int client_socket, struct sockaddr_storage remote_addr, Display screen);
 void *handle_client_thread(void *);
+static int run_command(uint8_t command, char *data, uint32_t datalen, Client *, ClientWindow *);
 
 int main (int argc, char **argv) {
 	(void) argc;
@@ -80,65 +81,24 @@ void *handle_client_thread(void *ptr) {
 	char *packet=NULL;
 	uint32_t packlen;
 	uint8_t cmd;
-	uint32_t img_data[32];
 
 	printf("got a connection ");
 	get_client_name(&(client->addr));
 
 
 	while (running) {
-
 		// 1. get single "packet"
 		printf("asking for a packet\n");
 		packlen = get_packet(client->sock, &buf, &packet);
-
 		printf("got a packet. Length: %zu\n", packlen);
-
 		if (packlen == 0){
 			running = 0;
 			break;
 		}
 
-
 		// 2. parse packet and perform command
-
 		cmd = (uint8_t) *packet++;
-		printf("Command from packet: %02X\n", cmd);
-		switch (cmd) {
-			case PIWM_CMD_OPEN:
-				if (gfx.window != 0){ fprintf(stderr, "ignoring duplicate window\n"); break; }
-				gfx = create_window(client->screen);
-				break;
-			case PIWM_CMD_DRAW:
-				//currently expects 1 cmd byte, and 12 (3*4) data bytes
-				if (packlen < 13){
-					fprintf(stderr, "not enough bytes to draw. Got %zu, expected 13\n",packlen);
-					break;
-				} else if (packlen > 13){
-					fprintf(stderr, "got byte overflow (%d). expected 13\n", packlen);
-				}
-
-				// sent as RGB, but bitmap is BGR
-				img_data[0] = packet[2] | packet[1] << 8 | packet[0] << 16;
-				img_data[1] = packet[5] | packet[4] << 8 | packet[3] << 16;
-				img_data[16]= packet[8] | packet[7] << 8 | packet[6] << 16;
-				img_data[17]= packet[11] | packet[10] << 8 | packet[9] << 16;
-				window_update_graphics(&gfx, img_data);
-				break;
-			case PIWM_CMD_CLOSE:
-				running=0;
-				break;
-			case PIWM_CMD_RESIZE:
-			case PIWM_CMD_VGENABLE:
-			case PIWM_CMD_VGDISABLE:
-			case PIWM_CMD_RESERVED:
-			case PIWM_CMD_VGCMD:
-				printf("command not implemented\n");
-				break;
-			default:
-				printf("invalid command byte: %02X\n", cmd);
-				break;
-		}
+		running = run_command(cmd, packet, packlen-1, client, &gfx);
 
 		// 3. repeat or cleanup
 	}
@@ -166,4 +126,48 @@ void on_connect(int client, struct sockaddr_storage addr, Display screen) {
 	pthread_attr_init(&attrs);
 	pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
 	pthread_create(&thread, &attrs, handle_client_thread, (void *)c);
+}
+
+static int run_command(uint8_t command, char *data, uint32_t datalen, Client *client, ClientWindow *gfx) {
+	int running=1;
+	uint32_t img_data[32];
+
+	printf("Command from packet: %02X\n", command);
+	switch (command) {
+		case PIWM_CMD_OPEN:
+			if (gfx->window != 0){ fprintf(stderr, "ignoring duplicate window\n"); break; }
+			*gfx = create_window(client->screen);
+			break;
+		case PIWM_CMD_DRAW:
+			if (datalen < 12){
+				fprintf(stderr, "not enough bytes to draw. Got %zu, expected 12\n",datalen);
+				break;
+			} else if (datalen > 12){
+				fprintf(stderr, "got byte overflow (%d). expected 12\n", datalen);
+			}
+
+			// sent as RGB, but bitmap is BGR
+			img_data[0] = data[2] | data[1] << 8 | data[0] << 16;
+			img_data[1] = data[5] | data[4] << 8 | data[3] << 16;
+			img_data[16]= data[8] | data[7] << 8 | data[6] << 16;
+			img_data[17]= data[11] | data[10] << 8 | data[9] << 16;
+			window_update_graphics(gfx, img_data);
+			break;
+		case PIWM_CMD_CLOSE:
+			running=0;
+			break;
+		case PIWM_CMD_RESIZE:
+		case PIWM_CMD_VGENABLE:
+		case PIWM_CMD_VGDISABLE:
+		case PIWM_CMD_RESERVED:
+		case PIWM_CMD_VGCMD:
+			printf("command not implemented\n");
+			break;
+		default:
+			printf("invalid command byte: %02X\n", command);
+			running=0;
+			break;
+	}
+
+	return running;
 }
