@@ -14,18 +14,28 @@ colors = [
 	b'\xff\x00\x00'
 ]
 
-def r(times=1):
-	return b"".join([random.choice(colors) for i in range(times)])
-
-
-def rainbow(length=120):
-	for i in range(length):
-		s.send(b"\x02" + r(4))
-		time.sleep(1/60)
 
 
 s = socket.create_connection(("192.168.1.47",18455))
-s.send(b"\x00")
+
+
+def send(data):
+	packlen = len(data) + 4 #header size
+	s.send(packlen.to_bytes(4,'big') + data)
+
+
+def win_open():
+	send(b"\x00")
+
+def r(times=1):
+	return b"".join([random.choice(colors) for i in range(times)])
+
+def rainbow(length=120):
+	for i in range(length):
+		send(b"\x02" + r(4))
+		time.sleep(1/60)
+
+
 
 
 code.interact(local=locals())

@@ -70,49 +70,64 @@ int main (int argc, char **argv) {
 
 
 void *handle_client_thread(void *ptr) {
+
 	Client *client = (Client *)ptr;
-
-
-	char buf[2048];
-	ssize_t n_recvd;
-	uint32_t img_data[32];
 	ClientWindow gfx = { 0 };
+	int running = 1;
+
+	//for reading data into
+	Buffer buf;
+	char *packet=NULL;
+	uint32_t packlen;
+	uint8_t cmd;
+	uint32_t img_data[32];
 
 	printf("got a connection ");
 	get_client_name(&(client->addr));
 
 
-	while ( (n_recvd = recv(client->sock, buf, 2048, 0)) > 0) {
-		/*
-		printf("< ");
-		for (int i=0; i<n_recvd; i++){
-			printf("[%d] ",buf[i]);
-		}
-		printf(">\n");
-		*/
+	while (running) {
 
-		switch (buf[0]) {
+		// 1. get single "packet"
+		printf("asking for a packet\n");
+		packlen = get_packet(client->sock, &buf, &packet);
+
+		printf("got a packet. Length: %zu\n", packlen);
+
+		if (packlen == 0){
+			running = 0;
+			break;
+		}
+
+
+		// 2. parse packet and perform command
+
+		cmd = (uint8_t) *packet++;
+		printf("Command from packet: %02X\n", cmd);
+		switch (cmd) {
 			case PIWM_CMD_OPEN:
 				if (gfx.window != 0){ fprintf(stderr, "ignoring duplicate window\n"); break; }
 				gfx = create_window(client->screen);
 				break;
 			case PIWM_CMD_DRAW:
 				//currently expects 1 cmd byte, and 12 (3*4) data bytes
-				if (n_recvd < 13){
-					fprintf(stderr, "not enough bytes to draw. Got %d, expected 13\n",n_recvd);
+				if (packlen < 13){
+					fprintf(stderr, "not enough bytes to draw. Got %zu, expected 13\n",packlen);
 					break;
-				} else if (n_recvd > 13){
-					fprintf(stderr, "got byte overflow (%d). expected 13\n", n_recvd);
+				} else if (packlen > 13){
+					fprintf(stderr, "got byte overflow (%d). expected 13\n", packlen);
 				}
 
 				// sent as RGB, but bitmap is BGR
-				img_data[0] = buf[3] | buf[2] << 8 | buf[1] << 16;
-				img_data[1] = buf[6] | buf[5] << 8 | buf[4] << 16;
-				img_data[16]= buf[9] | buf[8] << 8 | buf[7] << 16;
-				img_data[17]= buf[12] | buf[11] << 8 | buf[10] << 16;
+				img_data[0] = packet[2] | packet[1] << 8 | packet[0] << 16;
+				img_data[1] = packet[5] | packet[4] << 8 | packet[3] << 16;
+				img_data[16]= packet[8] | packet[7] << 8 | packet[6] << 16;
+				img_data[17]= packet[11] | packet[10] << 8 | packet[9] << 16;
 				window_update_graphics(&gfx, img_data);
 				break;
 			case PIWM_CMD_CLOSE:
+				running=0;
+				break;
 			case PIWM_CMD_RESIZE:
 			case PIWM_CMD_VGENABLE:
 			case PIWM_CMD_VGDISABLE:
@@ -121,14 +136,18 @@ void *handle_client_thread(void *ptr) {
 				printf("command not implemented\n");
 				break;
 			default:
-				printf("invalid command byte: %02X\n", buf[0]);
+				printf("invalid command byte: %02X\n", cmd);
 				break;
 		}
+
+		// 3. repeat or cleanup
 	}
 
+	// X. cleanup and leave
 	printf("destroying window, closing socket.\n");	
 	destroy_window(&gfx); //graphics cleanup
 	close(client->sock);  //network cleanup
+	free(buf.buf);
 	free(client);
 	//pthread_exit or return
 	return NULL;
