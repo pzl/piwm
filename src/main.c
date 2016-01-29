@@ -4,15 +4,11 @@
 
 #include <pthread.h>
 
+#include "common.h"
+#include "command.h"
 #include "gfx.h"
 #include "net.h"
 
-
-typedef struct {
-	int sock;
-	struct sockaddr_storage addr;
-	Display screen;
-} Client; /* for passing the info to a thread */
 
 void on_connect(int client_socket, struct sockaddr_storage remote_addr, Display screen);
 void *handle_client_thread(void *);
@@ -53,22 +49,6 @@ int main (int argc, char **argv) {
 
 	return 0;
 }
-
-
-#define PIWM_CMD_OPEN		0x00
-#define PIWM_CMD_CLOSE		0x01
-
-#define PIWM_CMD_DRAW		0x02
-
-#define PIWM_CMD_RESIZE		0x03
-
-#define PIWM_CMD_VGENABLE	0x04
-#define PIWM_CMD_VGDISABLE	0x05
-
-#define PIWM_CMD_RESERVED	0x06
-
-#define PIWM_CMD_VGCMD		0x07
-
 
 void *handle_client_thread(void *ptr) {
 
@@ -130,32 +110,12 @@ void on_connect(int client, struct sockaddr_storage addr, Display screen) {
 
 static int run_command(uint8_t command, char *data, uint32_t datalen, Client *client, ClientWindow *gfx) {
 	int running=1;
-	uint32_t img_data[32];
 
 	printf("Command from packet: %02X\n", command);
 	switch (command) {
-		case PIWM_CMD_OPEN:
-			if (gfx->window != 0){ fprintf(stderr, "ignoring duplicate window\n"); break; }
-			*gfx = create_window(client->screen);
-			break;
-		case PIWM_CMD_DRAW:
-			if (datalen < 12){
-				fprintf(stderr, "not enough bytes to draw. Got %zu, expected 12\n",datalen);
-				break;
-			} else if (datalen > 12){
-				fprintf(stderr, "got byte overflow (%d). expected 12\n", datalen);
-			}
-
-			// sent as RGB, but bitmap is BGR
-			img_data[0] = data[2] | data[1] << 8 | data[0] << 16;
-			img_data[1] = data[5] | data[4] << 8 | data[3] << 16;
-			img_data[16]= data[8] | data[7] << 8 | data[6] << 16;
-			img_data[17]= data[11] | data[10] << 8 | data[9] << 16;
-			window_update_graphics(gfx, img_data);
-			break;
-		case PIWM_CMD_CLOSE:
-			running=0;
-			break;
+		case PIWM_CMD_OPEN: running = win_open(client,gfx,data,datalen); break;
+		case PIWM_CMD_DRAW: running = draw(client,gfx,data,datalen); break;
+		case PIWM_CMD_CLOSE: running=0; break;
 		case PIWM_CMD_RESIZE:
 		case PIWM_CMD_VGENABLE:
 		case PIWM_CMD_VGDISABLE:
