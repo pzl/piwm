@@ -26,7 +26,7 @@ Display setup_graphics(void){
 	return d;
 }
 
-ClientWindow create_window(Display d) {
+ClientWindow create_window(Display d, uint16_t native_w, uint16_t native_h, uint16_t x, uint16_t y, uint16_t scaled_w, uint16_t scaled_h) {
 	ClientWindow client;
 	uint32_t throwaway_ptr;
 	DISPMANX_UPDATE_HANDLE_T update;
@@ -38,23 +38,31 @@ ClientWindow create_window(Display d) {
 	VC_RECT_T src,
 			  dst;
 
+
+	client.native_w = native_w;
+	client.native_h = native_h;
+	client.x = x;
+	client.y = y;
+	client.scaled_w = scaled_w;
+	client.scaled_h = scaled_h;
+
 	client.next = 0;
 
-	if ((client.rsrc[0] = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, 2,2, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
+	if ((client.rsrc[0] = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, client.native_w, client.native_h, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
 		fprintf(stderr, "Error creating resource\n");
 		exit(1);
 	}
-	if ((client.rsrc[1] = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, 2,2, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
+	if ((client.rsrc[1] = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, client.native_w,client.native_h, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
 		fprintf(stderr, "Error creating resource\n");
 		exit(1);
 	}
 
 
-	if (vc_dispmanx_rect_set(&src, 0, 0, 2<<16, 2<<16) != 0){
+	if (vc_dispmanx_rect_set(&src, 0, 0, client.native_w<<16, client.native_h<<16) != 0){
 		fprintf(stderr, "error setting rect\n");
 		exit(1);
 	}
-	if (vc_dispmanx_rect_set(&dst, 5, 5, 200, 200) != 0){
+	if (vc_dispmanx_rect_set(&dst, client.x, client.y, client.scaled_w, client.scaled_h) != 0){
 		fprintf(stderr, "error setting rect\n");
 		exit(1);
 	}
@@ -110,7 +118,7 @@ void destroy_window(ClientWindow *c) {
 void window_update_graphics(ClientWindow *c, uint32_t *data) {
 	DISPMANX_UPDATE_HANDLE_T update;
 	VC_RECT_T rect;
-	vc_dispmanx_rect_set(&rect, 0, 0, 2, 2);
+	vc_dispmanx_rect_set(&rect, 0, 0, c->native_w, c->native_h);
 
 
 	//upload image data to GPU resource

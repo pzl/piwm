@@ -10,6 +10,12 @@ typedef struct {
 	DISPMANX_ELEMENT_HANDLE_T window;
 	DISPMANX_RESOURCE_HANDLE_T rsrc[2];
 	int next;
+	uint16_t native_w;
+	uint16_t native_h;
+	uint16_t x;
+	uint16_t y;
+	uint16_t scaled_w;
+	uint16_t scaled_h;
 } ClientWindow;
 
 typedef struct {
@@ -19,7 +25,7 @@ typedef struct {
 } Display;
 
 Display setup_graphics(void);
-ClientWindow create_window(Display d);
+ClientWindow create_window(Display d, uint16_t native_w, uint16_t native_h, uint16_t x, uint16_t y, uint16_t scaled_w, uint16_t scaled_h);
 void destroy_window(ClientWindow *c);
 void window_update_graphics(ClientWindow *c, uint32_t *data);
 
