@@ -33,13 +33,7 @@ static uint32_t packet_size(char *packet);
 
 
 static uint32_t packet_size(char *packet){
-	uint32_t raw_size,
-			 size;
-
-	memcpy(&raw_size, packet, sizeof(uint32_t));
-	size = ntohl(raw_size);
-
-	return size;
+	return read32(packet);
 }
 
 /*
@@ -321,4 +315,17 @@ void get_client_name(struct sockaddr_storage *remote) {
 	}
 
 	printf("from %s:%d\n", clientname,port);
+}
+
+
+uint16_t read16(char *buf){
+	uint16_t raw_short;
+	memcpy(&raw_short, buf, sizeof(uint16_t));
+	return ntohs(raw_short);
+}
+
+uint32_t read32(char *buf){
+	uint32_t raw_long;
+	memcpy(&raw_long, buf, sizeof(uint32_t));
+	return ntohs(raw_long);
 }

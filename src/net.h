@@ -14,5 +14,8 @@ int setup_socket(void);
 void get_client_name(struct sockaddr_storage *remote);
 uint32_t get_packet(int sock, Buffer *, char **packet_pointer);
 
+uint16_t read16(char *);
+uint32_t read32(char *);
+
 
 #endif
