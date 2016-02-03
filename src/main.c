@@ -86,8 +86,10 @@ void *handle_client_thread(void *ptr) {
 	}
 
 	// X. cleanup and leave
-	printf("destroying window, closing socket.\n");	
-	destroy_window(&gfx); //graphics cleanup
+	printf("cleaning up client data\n");
+	if (gfx.window != 0){
+		destroy_window(&gfx); //graphics cleanup
+	}
 	close(client->sock);  //network cleanup
 	free(buf.buf);
 	free(client);
