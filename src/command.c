@@ -51,21 +51,21 @@ int win_open(Client *client, ClientWindow *gfx, char *data, uint32_t datalen) {
 
 
 int draw(Client *client, ClientWindow *gfx, char *data, uint32_t datalen) {
-	uint32_t img_data[32];
+	uint32_t img_data[datalen];
+	uint32_t i;
 	(void) client;
 
-	if (datalen < 12){
-		fprintf(stderr, "not enough bytes to draw. Got %zu, expected 12\n",datalen);
-		return 0;
-	} else if (datalen > 12){
-		fprintf(stderr, "got byte overflow (%d). expected 12\n", datalen);
+	//@todo: verify OpenVG or bitmap mode
+
+
+	//@todo: pitch alignment (16)
+
+	//pack bytes into RGBA32 pixels
+	// sent as RGB, but bitmap is BGR
+	for (i=0; i<datalen; i+=3){
+		img_data[i/3] = data[i+2] | data[i+1] << 8 | data[i] << 16;
 	}
 
-	// sent as RGB, but bitmap is BGR
-	img_data[0] = data[2] | data[1] << 8 | data[0] << 16;
-	img_data[1] = data[5] | data[4] << 8 | data[3] << 16;
-	img_data[16]= data[8] | data[7] << 8 | data[6] << 16;
-	img_data[17]= data[11] | data[10] << 8 | data[9] << 16;
 	window_update_graphics(gfx, img_data);
 
 	return 1;
