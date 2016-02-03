@@ -1,0 +1,7 @@
+- [ ] Limit number of simultaneous clients (prevent massive connection mem attack). Need to decrement on disconnect.
+- [ ] Gracefully exit server on interrupt
+- [ ] Allow clients to layer/stack their own windows?
+- [ ] WM layout functions, positions.
+- [ ] Notify clients of changes to their window or status
+- [ ] Handle packets larger than BUF_ALLOC_SIZE
+- [ ] Handle cached-position packets larger than remaining space in buffer

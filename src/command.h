@@ -6,10 +6,9 @@
 
 #define PIWM_CMD_OPEN		0x00
 #define PIWM_CMD_CLOSE		0x01
+#define PIWM_CMD_RESIZE		0x02
 
-#define PIWM_CMD_DRAW		0x02
-
-#define PIWM_CMD_RESIZE		0x03
+#define PIWM_CMD_DRAW		0x03
 
 #define PIWM_CMD_VGENABLE	0x04
 #define PIWM_CMD_VGDISABLE	0x05
