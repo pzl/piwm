@@ -62,7 +62,9 @@ void *handle_client_thread(void *ptr) {
 	uint32_t packlen;
 	uint8_t cmd;
 
-	printf("got a connection ");
+	buf.buf = NULL;
+
+	printf("<%lu> got a connection ", pthread_self());
 	get_client_name(&(client->addr));
 
 
