@@ -327,5 +327,5 @@ uint16_t read16(char *buf){
 uint32_t read32(char *buf){
 	uint32_t raw_long;
 	memcpy(&raw_long, buf, sizeof(uint32_t));
-	return ntohs(raw_long);
+	return ntohl(raw_long);
 }
