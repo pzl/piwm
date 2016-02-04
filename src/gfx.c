@@ -47,6 +47,7 @@ ClientWindow create_window(Display d, uint16_t native_w, uint16_t native_h, uint
 	client.scaled_h = scaled_h;
 
 	client.next = 0;
+	client.mode = MODE_BITMAP;
 
 	if ((client.rsrc[0] = vc_dispmanx_resource_create(VC_IMAGE_RGBA32, client.native_w, client.native_h, &throwaway_ptr)) == DISPMANX_NO_HANDLE){
 		fprintf(stderr, "Error creating resource\n");

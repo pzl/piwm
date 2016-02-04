@@ -24,8 +24,9 @@
 	should be destroyed
 */
 
-int win_open(Client *, ClientWindow *, char *data, uint32_t datalen);
-int draw    (Client *, ClientWindow *, char *data, uint32_t datalen);
-
+int win_open		(Client *, ClientWindow *, char *data, uint32_t datalen);
+int draw			(Client *, ClientWindow *, char *data, uint32_t datalen);
+int enable_openvg	(Client *, ClientWindow *, char *data, uint32_t datalen);
+int disable_openvg	(Client *, ClientWindow *, char *data, uint32_t datalen);
 
 #endif

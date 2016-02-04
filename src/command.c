@@ -55,18 +55,51 @@ int draw(Client *client, ClientWindow *gfx, char *data, uint32_t datalen) {
 	uint32_t i;
 	(void) client;
 
-	//@todo: verify OpenVG or bitmap mode
+	if (gfx->mode == MODE_BITMAP){
+		//@todo: pitch alignment (16)
 
-
-	//@todo: pitch alignment (16)
-
-	//pack bytes into RGBA32 pixels
-	// sent as RGB, but bitmap is BGR
-	for (i=0; i<datalen; i+=3){
-		img_data[i/3] = data[i+2] | data[i+1] << 8 | data[i] << 16;
+		//pack bytes into RGBA32 pixels
+		// sent as RGB, but bitmap is BGR
+		for (i=0; i<datalen; i+=3){
+			img_data[i/3] = data[i+2] | data[i+1] << 8 | data[i] << 16;
+		}
+		window_update_graphics(gfx, img_data);
+	} else {
+		//OpenVG mode
 	}
 
-	window_update_graphics(gfx, img_data);
+
+	return 1;
+}
+
+int enable_openvg(Client *client, ClientWindow *gfx, char *data, uint32_t datalen) {
+	(void) client;
+	(void) data;
+	(void) datalen;
+	if (gfx->mode == MODE_OPENVG) {
+		return 1; //already enabled, nothing to do
+	}
+	gfx->mode = MODE_OPENVG;
+
+	//delete resources
+
+	//create surfaces, contexts, etc
+
+	return 1;
+}
+
+int disable_openvg(Client *client, ClientWindow *gfx, char *data, uint32_t datalen) {
+	(void) client;
+	(void) data;
+	(void) datalen;
+	if (gfx->mode == MODE_BITMAP){
+		return 1; //already disabled, nothing to do
+	}
+	gfx->mode = MODE_BITMAP;
+
+	//delete and clear up any OpenVG resources
+
+	//recreate resources
 
 	return 1;
 }

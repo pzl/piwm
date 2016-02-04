@@ -117,12 +117,12 @@ static int run_command(uint8_t command, char *data, uint32_t datalen, Client *cl
 
 	printf("Command from packet: %02X\n", command);
 	switch (command) {
-		case PIWM_CMD_OPEN: running = win_open(client,gfx,data,datalen); break;
-		case PIWM_CMD_DRAW: running = draw(client,gfx,data,datalen); break;
-		case PIWM_CMD_CLOSE: running=0; break;
+		case PIWM_CMD_OPEN:			running = win_open(client,gfx,data,datalen); break;
+		case PIWM_CMD_DRAW:			running = draw(client,gfx,data,datalen); break;
+		case PIWM_CMD_CLOSE:		running = 0; break;
+		case PIWM_CMD_VGENABLE:		running = enable_openvg(client,gfx,data,datalen); break;
+		case PIWM_CMD_VGDISABLE:	running = disable_openvg(client,gfx,data,datalen); break;
 		case PIWM_CMD_RESIZE:
-		case PIWM_CMD_VGENABLE:
-		case PIWM_CMD_VGDISABLE:
 		case PIWM_CMD_RESERVED:
 		case PIWM_CMD_VGCMD:
 			printf("command not implemented\n");

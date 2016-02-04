@@ -9,7 +9,8 @@
 typedef struct {
 	DISPMANX_ELEMENT_HANDLE_T window;
 	DISPMANX_RESOURCE_HANDLE_T rsrc[2];
-	int next;
+	uint8_t next;
+	enum {MODE_BITMAP, MODE_OPENVG} mode;
 	uint16_t native_w;
 	uint16_t native_h;
 	uint16_t x;
