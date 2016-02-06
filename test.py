@@ -15,6 +15,8 @@ colors = [
 ]
 
 CMD_OPEN = b"\x00"
+CMD_CLOSE= b"\x01"
+CMD_RESIZE = b"\x02"
 CMD_DRAW = b"\x03"
 
 s = socket.create_connection(("192.168.1.47",18455))
@@ -29,6 +31,15 @@ def send(data):
 
 def win_open(w=16,h=2,x=5,y=9,sw=16,sh=2):
 	send(CMD_OPEN + w.to_bytes(2,'big') + h.to_bytes(2,'big') + x.to_bytes(2,'big') + y.to_bytes(2,'big') + sw.to_bytes(2,'big') + sh.to_bytes(2,'big'))
+
+
+def win_close():
+	send(CMD_CLOSE)
+
+
+def win_change(w=16,h=2,x=5,y=9,sw=16,sh=2):
+	send(CMD_RESIZE + w.to_bytes(2,'big') + h.to_bytes(2,'big') + x.to_bytes(2,'big') + y.to_bytes(2,'big') + sw.to_bytes(2,'big') + sh.to_bytes(2,'big'))
+
 
 def r(times=1):
 	return b"".join([random.choice(colors) for i in range(times)])
